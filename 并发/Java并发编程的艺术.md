@@ -625,4 +625,336 @@ X86 处理器仅会对写-读操作做重排序。
 
 
 
-#### 锁内存语义的实现
+#### 锁 内存语义的实现
+
+本文将借助 ReentrantLock 的源代码，来分析锁内存语义的具体实现机制
+
+```java
+public class ReentrantLockExample {
+    int a=0;
+    ReentrantLock lock=new ReentrantLock();
+    
+    public void writer(){
+        lock.lock();//获取锁
+        try {
+            a++;
+        }finally {
+            lock.unlock();//释放锁
+        }
+    }
+    
+    public void reader(){
+        lock.lock();
+        try {
+            int i=a;
+            System.out.println(i);
+            
+        }finally {
+            lock.unlock();
+        }
+    }
+}
+```
+
+在 ReentrantLock 中，调用 lock()方法获取锁；调用 unlock()方法释放锁
+
+ReentrantLock 的实现依赖于 Java 同步器框架 AbstractQueuedSynchronizer（本文简称之为 AQS）。AQS 使用一个整型的 volatile 变量（命名为 state）来维护同步状态，马上我们会看到，这个 volatile 变量是 ReentrantLock 内存语义实现的关键
+
+
+
+ReentrantLock类图
+
+![](https://ftp.bmp.ovh/imgs/2022/02/854b3e8ddd453a45.png)
+
+
+
+ReentrantLock 分为公平锁和非公平锁，我们首先分析公平锁。使用公平锁时，加锁
+方法 lock()调用轨迹如下。
+1. ReentrantLock:lock()。
+
+2. FairSync:lock()。
+
+3. AbstractQueuedSynchronizer:acquire(int arg)。
+
+4. ReentrantLock:tryAcquire(int acquires)。
+
+  
+
+  在第 4 步真正开始加锁，下面是该方法的源代码
+
+```java
+protected final boolean tryAcquire(int acquires) {
+     final Thread current = Thread.currentThread();
+     int c = getState(); // 获取锁的开始，首先读 volatile 变量 state
+     if (c == 0) {
+         if (isFirst(current) && compareAndSetState(0, acquires)) {
+             setExclusiveOwnerThread(current);
+             return true;
+         }
+     } else if (current == getExclusiveOwnerThread()) {
+         int nextc = c + acquires;
+         if (nextc < 0) throw new Error("Maximum lock count exceeded");
+         setState(nextc);
+         return true;
+     }
+     return false;
+}
+```
+
+
+
+![](https://s3.bmp.ovh/imgs/2022/02/3ce7206a64864918.png)
+
+
+
+```java
+protected final boolean tryRelease(int releases) {
+     int c = getState() - releases;
+     if (Thread.currentThread() != getExclusiveOwnerThread()) throw new IllegalMonitorStateException();
+     boolean free = false;
+     if (c == 0) {
+         free = true;
+         setExclusiveOwnerThread(null);
+     }
+     setState(c); // 释放锁的最后，写 volatile 变量 state
+     return free;
+}
+```
+
+
+
+![](https://s3.bmp.ovh/imgs/2022/02/be9419d972c98f33.png)
+
+![](https://s3.bmp.ovh/imgs/2022/02/8b07e93bd2bc234e.png)
+
+
+
+
+
+#### concurrent 包的实现
+
+![](https://s3.bmp.ovh/imgs/2022/02/d12d28c838a21dbc.png)
+
+
+
+Java 的 CAS 会使用现代处理器上提供的高效机器级别的原子指令，这些原子指令以原子方式对内存执行读-改-写操作，这是在多处理器中实现同步的关键
+
+volatile 变量的读/写和 CAS 可以实现线程之间的通信。把这些特性整合在一起，就形成了整个 concurrent 包得以实现的基石。如果我们仔细分析 concurrent 包的源代码实现，会发现一个通用化的实现模式
+
+```java
+首先，声明共享变量为 volatile。
+然后，使用 CAS 的原子条件更新来实现线程之间的同步。
+同时，配合以 volatile 的读/写和 CAS 所具有的 volatile 读和写的内存语义来实现线程之间的通信
+```
+
+==concurrent 包的实现示意图==
+
+![](https://s3.bmp.ovh/imgs/2022/02/177eeca9d55b1d3c.png)
+
+
+
+### final 域的内存语义
+
+与前面介绍的锁和 volatile 相比，对 final 域的读和写更像是普通的变量访问。下面将介绍 final 域的内存语义
+
+#### final 域的重排序规则
+
+#### 写 final 域的重排序规则
+
+#### 读 final 域的重排序规则
+
+#### final 域为引用类型
+
+#### 为什么 final 引用不能从构造函数内“溢出”
+
+#### final 语义在处理器中的实现
+
+#### JSR-133 为什么要增强 final 的语义
+
+
+
+
+
+### happens-before
+
+
+
+
+
+### 双重检查锁定与延迟初始化
+
+在 Java 多线程程序中，有时候需要采用延迟初始化来降低初始化类和创建对象的开销。双重检查锁定是常见的延迟初始化技术，但它是一个错误的用法。本文将分析双重检查锁定的错误根源，以及两种线程安全的延迟初始化方案。
+
+#### 双重检查锁定的由来
+
+在 Java 程序中，有时候可能需要推迟一些高开销的对象初始化操作，并且只有在使用这些对象时才进行初始化。此时，程序员可能会采用延迟初始化。但要正确实现线程安全的延迟初始化需要一些技巧，否则很容易出现问题。比如，下面是非线程安全的延迟初始化对象的示例代码。
+
+```java
+public class UnsafeLazyInitialization {
+     private static Instance instance;
+     public static Instance getInstance() {
+         if (instance == null) // 1：A 线程执行
+             instance = new Instance(); // 2：B 线程执行
+     			return instance;
+     }
+}
+```
+
+在 UnsafeLazyInitialization 类中，假设 A 线程执行代码 1 的同时，B 线程执行代码2。此时，线程 A 可能会看到 instance 引用的对象还没有完成初始化
+
+我们可以对 getInstance()方法做同步处理来实现线程安全的延迟初始化。示例代码如下
+
+```java
+public class SafeLazyInitialization {
+     private static Instance instance;
+     public synchronized static Instance getInstance() {
+         if (instance == null) instance = new Instance();
+         return instance;
+     }
+}
+```
+
+由于对 getInstance()方法做了同步处理，synchronized 将导致性能开销。如果getInstance()方法被多个线程频繁的调用，将会导致程序执行性能的下降。在早期的 JVM 中，synchronized（甚至是无竞争的 synchronized）存在巨大的性能开销。因此，人们想出了一个“聪明”的技巧：双重检查锁定（Double-Checked Locking）。
+
+```java
+public class DoubleCheckedLocking { // 1
+     private static Instance instance; // 2
+     public static Instance getInstance() { // 3
+         if (instance == null) { // 4:第一次检查
+             synchronized (DoubleCheckedLocking.class) { // 5:加锁
+                 if (instance == null) // 6:第二次检查
+                     instance = new Instance(); // 7:问题的根源出在这里
+              } // 8
+          } // 9 
+          return instance; // 10
+     } // 11
+}
+```
+
+双重检查锁定看起来似乎很完美，==但这是一个错误的优化！==  在线程执行到第 4 行，代码读取到 instance 不为 null 时，instance 引用的对象有可能还没有完成初始化!!!
+
+
+
+#### 问题的根源
+
+![](https://s3.bmp.ovh/imgs/2022/02/ef32ea977374f2c4.png)
+
+![](https://s3.bmp.ovh/imgs/2022/02/43c0b5208d49bff4.png)
+
+
+
+#### 基于 volatile 的解决方案
+
+对于前面的基于双重检查锁定来实现延迟初始化的方案（指 DoubleCheckedLocking示例代码），只需要做一点小的修改（把 instance 声明为 volatile 型），就可以实现线程安全的延迟初始化。请看下面的示例代码。
+
+```java
+public class SafeDoubleCheckedLocking {
+     private volatile static Instance instance;
+     public static Instance getInstance() {
+         if (instance == null) {
+             synchronized (SafeDoubleCheckedLocking.class) {
+                 if (instance == null)
+                     instance = new Instance(); // instance 为 volatile，现在没问题了
+             }
+         }
+         return instance;
+     }
+}
+```
+
+当声明对象的引用为 volatile 后，3.8.2 节中的 3 行伪代码中的 2 和 3 之间的重排序，在多线程环境中将会被禁止。
+
+
+
+#### 基于类初始化的解决方案
+
+JVM 在类的初始化阶段（即在 Class 被加载后，且被线程使用之前），会执行类的初始化。在执行类的初始化期间，JVM 会去获取一个锁。这个锁可以同步多个线程对同一个类的初始化。基于这个特性，可以实现另一种线程安全的延迟初始化方案
+
+```java
+public class InstanceFactory {
+     private static class InstanceHolder {
+         public static Instance instance = new Instance();
+     }
+     public static Instance getInstance() {
+         return InstanceHolder.instance; // 这里将导致 InstanceHolder 类被初始化
+     }
+}
+```
+
+
+
+### Java 内存模型综述
+
+### 本章小结
+
+
+
+
+
+## 四：Java 并发编程基础
+
+Java 从诞生开始就明智地选择了内置对多线程的支持，这使得 Java 语言相比同一时期的其他语言具有明显的优势。==线程作为操作系统调度的最小单元==，多个线程能够同时执行，这将显著提升程序性能，在多核环境中表现得更加明显。但是，过多地创建线程和对线程的不当管理也容易造成问题。本章将着重介绍 Java 并发编程的基础知识，从启动一个线程到线程间不同的通信方式，最后通过简单的线程池示例以及应用（简单的Web 服务器）来串联本章所介绍的内容。
+
+### 线程简介
+
+#### 什么是线程
+
+现代操作系统在运行一个程序时，会为其创建一个进程。例如，启动一个 Java 程序，操作系统就会创建一个 Java 进程。现代操作系统调度的最小单元是线程，也叫轻量级进程（Light Weight Process），在一个进程里可以创建多个线程，这些线程都拥有各自的**计数器、堆栈和局部变量**等属性，并且能够访问共享的内存变量。处理器在这些线程上高速切换，让使用者感觉到这些线程在同时执行
+
+一个 Java 程序从 main()方法开始执行，然后按照既定的代码逻辑执行，看似没有其他线程参与，但实际上 Java 程序天生就是多线程程序，因为执行 main()方法的是一个名称为 main 的线程
+
+![](https://s3.bmp.ovh/imgs/2022/02/8bd17a8d19f7dc36.png)
+
+
+
+#### 为什么要使用多线程
+
+正确使用多线程，总是能够给开发人员带来显著的好处，而使用多线程的原因主要有以下几点。
+
+1.  更多的处理器核心
+
+随着处理器上的核心数量越来越多，以及超线程技术的广泛运用，现在大多数计算机都比以往更加擅长并行计算，而处理器性能的提升方式，也从更高的主频向更多的核心发展。如何利用好处理器上的多个核心也成了现在的主要问题。线程是大多数操作系统调度的基本单元，一个程序作为一个进程来运行，程序运行过程中能够创建多个线程，而一个线程在一个时刻只能运行在一个处理器核心上。试想
+一下，一个单线程程序在运行时只能使用一个处理器核心，那么再多的处理器核心加入也无法显著提升该程序的执行效率。相反，如果该程序使用多线程技术，将计算逻辑分配到多个处理器核心上，就会显著减少程序的处理时间，并且随着更多处理器核心的加入而变得更有效率
+
+2.  更快的响应时间
+3.  更好的编程模型
+
+
+
+#### 线程优先级
+
+在 Java 线程中，通过一个整型成员变量 priority 来控制优先级，优先级的范围从1~10，在线程构建的时候可以通过 setPriority(int)方法来修改优先级，默认优先级是 5
+
+
+
+####  线程的状态
+
+Java 线程在运行的生命周期中可能处于表 4-1 所示的 6 种不同的状态，在给定的一个时刻，线程只能处于其中的一个状态
+
+![](https://s3.bmp.ovh/imgs/2022/02/92b8263cc6db10ab.png)
+
+**Java 线程状态变迁**
+
+![](https://s3.bmp.ovh/imgs/2022/02/dfc28954b2973991.png)
+
+
+
+![](https://s3.bmp.ovh/imgs/2022/02/e4edcc35b60cf540.png)
+
+
+
+#### Daemon 线程
+
+Daemon 线程是一种支持型线程(常被叫做守护线程)，因为它主要被用作程序中后台调度以及支持性工作。这意味着，当一个 Java 虚拟机中不存在非 Daemon 线程的时候，Java 虚拟机将会退出。可以通过调用 Thread.setDaemon(true)将线程设置为 Daemon 线程。
+
+
+
+### 启动和终止线程
+
+在前面章节的示例中通过调用线程的 start()方法进行启动，随着 run()方法的执行完毕，线程也随之终止，大家对此一定不会陌生，下面将详细介绍线程的启动和终止
+
+#### 构造线程
+
+在运行线程之前首先要构造一个线程对象，线程对象在构造的时候需要提供线程所需要的属性，如线程所属的线程组、线程优先级、是否是 Daemon 线程等信息。
+
+#### 启动线程
