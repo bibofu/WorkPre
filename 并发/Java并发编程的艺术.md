@@ -958,3 +958,175 @@ Daemon 线程是一种支持型线程(常被叫做守护线程)，因为它主�
 在运行线程之前首先要构造一个线程对象，线程对象在构造的时候需要提供线程所需要的属性，如线程所属的线程组、线程优先级、是否是 Daemon 线程等信息。
 
 #### 启动线程
+
+线程对象在初始化完成之后，调用 start()方法就可以启动这个线程。线程 start()方法的含义是：当前线程（即 parent 线程）同步告知 Java 虚拟机，只要线程规划器空闲，应立即启动调用 start()方法的线程。
+注意：启动一个线程前，最好为这个线程设置线程名称，因为这样在使用 jstack分析程序或者进行问题排查时，就会给开发人员提供一些提示，自定义的线程最好能够起个名字。
+
+
+
+#### 理解中断
+
+中断可以理解为线程的一个标识位属性，它表示一个运行中的线程是否被其他线程进行了中断操作。中断好比其他线程对该线程打了个招呼，其他线程通过调用该线程的interrupt()方法对其进行中断操作。
+
+从 Java 的 API 中可以看到，许多声明抛出 InterruptedException 的方法（例如Thread.sleep(longmillis)方法）这些方法在抛出 InterruptedException 之前，Java 虚拟机会先将该线程的中断标识位清除，然后抛出 InterruptedException，此时调用 isInterrupted()
+方法将会返回 false。
+
+
+
+#### 过期的 suspend()、resume()和 stop()
+
+
+
+#### 安全地终止线程
+
+在 4.2.3 节中提到的中断状态是线程的一个标识位，而中断操作是一种简便的线程间交互方式，而这种交互方式最适合用来取消或停止任务。除了中断以外，还可以利用一个 boolean 变量来控制是否需要停止任务并终止该线程
+
+```java
+public class CountThread {
+    public static void main(String[] args) throws Exception{
+        Runner one =new Runner();
+        Thread countT=new Thread(one,"countThread");
+        countT.start();
+
+        TimeUnit.SECONDS.sleep(1);
+        countT.interrupt();
+
+        Runner two=new Runner();
+
+        countT=new Thread(two,"countThread");
+        countT.start();
+
+        TimeUnit.SECONDS.sleep(1);
+        two.cancel();
+
+    }
+
+    private static class Runner implements Runnable{
+        private long i;
+        private volatile boolean on=true;
+
+        @Override
+        public void run() {
+            while (on&&!Thread.currentThread().isInterrupted()){
+                i++;
+            }
+            System.out.println("count i= "+i);
+        }
+
+        public void cancel(){
+            on=false;
+        }
+    }
+}
+
+```
+
+示例在执行过程中，main 线程通过中断操作和 cancel()方法均可使 CountThread 得以终止。这种通过标识位或者中断操作的方式能够使线程在终止时有机会去清理资源，而不是武断地将线程停止，因此这种终止线程的做法显得更加安全和优雅
+
+### 线程间通信
+
+线程开始运行，拥有自己的栈空间，就如同一个脚本一样，按照既定的代码一步一步地执行，直到终止。但是，每个运行中的线程，如果仅仅是孤立地运行，那么没有一点儿价值，或者说价值很少，如果多个线程能够相互配合完成工作，这将会带来巨大的价值
+
+#### volatile 和 synchronized 关键字
+
+Java 支持多个线程同时访问一个对象或者对象的成员变量，由于每个线程可以拥有这个变量的拷贝（虽然对象以及成员变量分配的内存是在共享内存中的，但是每个执行的线程还是可以拥有一份拷贝，这样做的目的是加速程序的执行，这是现代多核处理器的一个显著特性），所以程序在执行过程中，一个线程看到的变量并不一定是最新的。
+
+关键字 volatile 可以用来修饰字段（成员变量），就是告知程序任何对该变量的访问均需要从共享内存中获取，而对它的改变必须同步刷新回共享内存，它能保证所有线程对变量访问的可见性
+
+
+
+关键字 synchronized 可以修饰方法或者以同步块的形式来进行使用，它主要确保多个线程在同一个时刻，只能有一个线程处于方法或者同步块中，它保证了线程对变量访问的可见性和排他性。
+
+
+
+在代码清单 4-10 所示的例子中，使用了同步块和同步方法，通过使用 javap 工具查看生成的 class 文件信息来分析 synchronized 关键字的实现细节，示例如下
+
+[![H7Npn0.png](https://s4.ax1x.com/2022/02/18/H7Npn0.png)](https://imgtu.com/i/H7Npn0)
+
+
+
+![](https://s3.bmp.ovh/imgs/2022/02/d176c42885edc488.png)
+
+
+
+![](https://s3.bmp.ovh/imgs/2022/02/ddfda7166617301d.png)
+
+
+
+#### 等待/通知机制
+
+一个线程修改了一个对象的值，而另一个线程感知到了变化，然后进行相应的操作，整个过程开始于一个线程，而最终执行又是另一个线程。前者是生产者，后者就是消费者，这种模式隔离了“做什么”（what）和“怎么做”（How），在功能层面上实现了解耦，体系结构上具备了良好的伸缩性，但是在 Java 语言中如何实现类似的功能呢？
+
+![](https://s3.bmp.ovh/imgs/2022/02/edc046b04a53d30d.png)
+
+
+
+等待/通知机制，是指一个线程 A 调用了对象 O 的 wait()方法进入等待状态，而另一个线程 B 调用了对象 O 的 notify()或者 notifyAll()方法，线程 A 收到通知后从对象 O 的wait()方法返回，进而执行后续操作。上述两个线程通过对象 O 来完成交互，而对象上的wait()和 notify/notifyAll()的关系就如同开关信号一样，用来完成等待方和通知方之间的交互工作
+
+调用 wait()、notify()以及 notifyAll()时需要注意的细节
+
+![](https://s3.bmp.ovh/imgs/2022/02/79c857fb0ebc0841.png)
+
+从上述细节中可以看到，等待/通知机制依托于同步机制，其目的就是确保等待线程从 wait()方法返回时能够感知到通知线程对变量做出的修改。
+
+#### 等待/通知的经典范式
+
+从 4.3.2 节中的 Concurrency 示例中可以提炼出等待/通知的经典范式，该范式分为两
+部分，分别针对等待方（消费者）和通知方（生产者）
+
+![](https://s3.bmp.ovh/imgs/2022/02/f13e3699aa58bbf8.png)
+
+![](https://s3.bmp.ovh/imgs/2022/02/057c73a4da577543.png)
+
+
+
+#### 管道输入/输出流
+
+
+
+#### Thread.join()的使用
+
+如果一个线程 A 执行了 thread.join()语句，其含义是：当前线程 A 等待 thread 线程终止之后才从 thread.join()返回。线程 Thread 除了提供 join()方法之外，还提供了 join(long millis)和 join(longmillis,int nanos)两个具备超时特性的方法。这两个超时方法表示，如果
+线程 thread 在给定的超时时间里没有终止，那么将会从该超时方法中返回
+
+```java
+public class JoinDemo {
+      public static void main(String[] args) throws Exception{
+
+          Thread pre=Thread.currentThread();
+          for(int i=0;i<10;i++){
+              Thread thread=new Thread(new Dimino(pre),String.valueOf(i));
+              thread.start();
+              pre=thread;
+          }
+
+      }
+
+      static class Dimino implements Runnable{
+
+          private Thread thread;
+          public Dimino(Thread thread){
+              this.thread=thread;
+          }
+          @Override
+          public void run() {
+              try {
+                  thread.join();
+              }catch (InterruptedException e){
+                  e.printStackTrace();
+              }
+              System.out.println(thread.getName()+"terminate");
+
+          }
+      }
+  
+
+}
+
+Thread 2等待Thread 1结束后再执行
+```
+
+
+
+#### ThreadLocal 的使用
+
