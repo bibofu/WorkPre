@@ -380,7 +380,7 @@ HTTP 报文大致可分为报文首部和报文主体两块。两者由最初出
 
 
 
-#### 请求报文及响应报文的结构
+### 请求报文及响应报文的结构
 
 [![b9Ku38.png](https://s4.ax1x.com/2022/02/23/b9Ku38.png)](https://imgtu.com/i/b9Ku38)
 
@@ -401,4 +401,727 @@ HTTP 报文大致可分为报文首部和报文主体两块。两者由最初出
 可能包含 HTTP 的 RFC 里未定义的首部（Cookie 等）
 
 ### 编码提升传输速率
+
+HTTP 在传输数据时可以按照数据原貌直接传输，但也可以在传输过程中通过编码提升传输速率。通过在传输时编码，能有效地处理大量
+的访问请求。但是，编码的操作需要计算机来完成，因此会消耗更多的 CPU 等资源
+
+#### 报文主体和实体主体的差异
+
+[![b94dzR.png](https://s4.ax1x.com/2022/02/23/b94dzR.png)](https://imgtu.com/i/b94dzR)
+
+
+
+#### 压缩传输的内容编码
+
+向待发送邮件内增加附件时，为了使邮件容量变小，我们会先用 ZIP压缩文件之后再添加附件发送。HTTP 协议中有一种被称为内容编码
+的功能也能进行类似的操作。内容编码指明应用在实体内容上的编码格式，并保持实体信息原样压缩。内容编码后的实体由客户端接收并负责解码
+
+[![b95dAS.png](https://s4.ax1x.com/2022/02/23/b95dAS.png)](https://imgtu.com/i/b95dAS)
+
+
+
+#### 分割发送的分块传输编码
+
+在 HTTP 通信过程中，请求的编码实体资源尚未全部传输完成之前，浏览器无法显示请求页面。在传输大容量数据时，通过把数据分割成多块，能够让浏览器逐步显示页面。这种把实体主体分块的功能称为分块传输编码（Chunked TransferCoding）。
+
+[![b9ICut.png](https://s4.ax1x.com/2022/02/23/b9ICut.png)](https://imgtu.com/i/b9ICut)
+
+
+
+### 发送多种数据的多部分对象集合
+
+[![b9o1sI.png](https://s4.ax1x.com/2022/02/23/b9o1sI.png)](https://imgtu.com/i/b9o1sI)
+
+发送邮件时，我们可以在邮件里写入文字并添加多份附件。这是因为采用了 MIME（Multipurpose Internet Mail Extensions，多用途因特网邮件扩展）机制，它允许邮件处理文本、图片、视频等多个不同类型的数据。例如，图片等二进制数据以 ASCII 码字符串编码的方式指明，就是利用 MIME 来描述标记数据类型。而在 MIME 扩展中会使用一种称为多部分对象集合（Multipart）的方法，来容纳多份不同类型的数据。
+
+
+
+
+
+### 获取部分内容的范围请求
+
+以前，用户不能使用现在这种高速的带宽访问互联网，当时，下载个尺寸稍大的图片或文件就已经很吃力了。如果下载过程中遇到网络中断的情况，那就必须重头开始。为了解决上述问题，需要一种可恢复的机制。所谓恢复是指能从之前下载中断处恢复下载。要实现该功能需要指定下载的实体范围。像这样，指定范围发送的请求叫做范围请求（Range Request）
+
+
+
+### 内容协商返回最合适的内容
+
+同一个 Web 网站有可能存在着多份相同内容的页面。比如英语版和中文版的 Web 页面，它们内容上虽相同，但使用的语言却不同。
+当浏览器的默认语言为英语或中文，访问相同 URI 的 Web 页面时，则会显示对应的英语版或中文版的 Web 页面。这样的机制称为内容
+协商（Content Negotiation）
+
+
+
+## 第四章：返回结果的 HTTP 状态码
+
+HTTP 状态码负责表示客户端 HTTP 请求的返回结果、标记服务器端的处理是否正常、通知出现的错误等工作。
+
+### 状态码告知从服务器端返回的请求结果
+
+状态码的职责是当客户端向服务器端发送请求时，描述返回的请求结果。借助状态码，用户可以知道服务器端是正常处理了请求，还是出现了错误。
+
+[![b9T3p4.png](https://s4.ax1x.com/2022/02/23/b9T3p4.png)](https://imgtu.com/i/b9T3p4)
+
+状态码如 200 OK，以 3 位数字和原因短语组成。
+数字中的第一位指定了响应类别，后两位无分类。响应类别有以下 5种
+
+[![b9Tscd.png](https://s4.ax1x.com/2022/02/23/b9Tscd.png)](https://imgtu.com/i/b9Tscd)
+
+
+
+### 2XX 成功
+
+#### 200 OK
+
+[![b97CuR.png](https://s4.ax1x.com/2022/02/23/b97CuR.png)](https://imgtu.com/i/b97CuR)
+
+
+
+在响应报文内，随状态码一起返回的信息会因方法的不同而发生改变。比如，使用 GET 方法时，对应请求资源的实体会作为响应返回；而使用 HEAD 方法时，对应请求资源的实体首部不随报文主体作为响应返回（即在响应中只返回首部，不会返回实体的主体部分）。
+
+#### 204 No Content
+
+[![b976GF.png](https://s4.ax1x.com/2022/02/23/b976GF.png)](https://imgtu.com/i/b976GF)
+
+该状态码代表服务器接收的请求已成功处理，但在返回的响应报文中不含实体的主体部分。另外，也不允许返回任何实体的主体。比如，
+当从浏览器发出请求处理后，返回 204 响应，那么浏览器显示的页面不发生更新。
+一般在只需要从客户端往服务器发送信息，而对客户端不需要发送新信息内容的情况下使用
+
+#### 206 Partial Content
+
+[![b97xdP.png](https://s4.ax1x.com/2022/02/23/b97xdP.png)](https://imgtu.com/i/b97xdP)
+
+该状态码表示客户端进行了范围请求，而服务器成功执行了这部分的GET 请求。响应报文中包含由 Content-Range 指定范围的实体内容
+
+
+
+### 3XX 重定向
+
+3XX 响应结果表明浏览器需要执行某些特殊的处理以正确处理请求。
+
+#### 301 Moved Permanently
+
+[![b9HNFK.png](https://s4.ax1x.com/2022/02/23/b9HNFK.png)](https://imgtu.com/i/b9HNFK)
+
+永久性重定向。该状态码表示请求的资源已被分配了新的 URI，以后应使用资源现在所指的 URI。也就是说，如果已经把资源对应的 URI
+保存为书签了，这时应该按 Location 首部字段提示的 URI 重新保存
+
+#### 302 Found
+
+[![b9bPk6.png](https://s4.ax1x.com/2022/02/23/b9bPk6.png)](https://imgtu.com/i/b9bPk6)
+
+和 301 Moved Permanently 状态码相似，但 302 状态码代表的资源不是被永久移动，只是临时性质的。换句话说，已移动的资源对应的
+URI 将来还有可能发生改变。
+
+
+
+#### 303 See Other
+
+[![b9b0hT.png](https://s4.ax1x.com/2022/02/23/b9b0hT.png)](https://imgtu.com/i/b9b0hT)
+
+该状态码表示由于请求对应的资源存在着另一个 URI，应使用 GET方法定向获取请求的资源。
+303 状态码和 302 Found 状态码有着相同的功能，但 303 状态码明确表示客户端应当采用 GET 方法获取资源，这点与 302 状态码有区
+别
+
+>   当 301、302、303 响应状态码返回时，几乎所有的浏览器都会把POST 改成 GET，并删除请求报文内的主体，之后请求会自动再次发送。301、302 标准是禁止将 POST 方法改变成 GET 方法的，但实际使用时大家都会这么做。
+
+#### 304 Not Modified
+
+[![b9boge.png](https://s4.ax1x.com/2022/02/23/b9boge.png)](https://imgtu.com/i/b9boge)
+
+该状态码表示客户端发送附带条件的请求时，服务器端允许请求访问资源，但未满足条件的情况。304 状态码返回时，不包含任何响应
+的主体部分。304 虽然被划分在 3XX 类别中，但是==和重定向没有关系==。
+
+附带条件的请求是指采用 GET方法的请求报文中包含 If-Match，If-ModifiedSince，If-None-Match，If-Range，If-Unmodified-Since 中任一首部
+
+#### 307 Temporary Redirect
+
+临时重定向。该状态码与 302 Found 有着相同的含义。
+
+
+
+### 4XX 客户端错误
+
+4XX 的响应结果表明客户端是发生错误的原因所在
+
+#### 400 Bad Request
+
+[![b9LZdI.png](https://s4.ax1x.com/2022/02/23/b9LZdI.png)](https://imgtu.com/i/b9LZdI)
+
+该状态码表示请求报文中存在语法错误。当错误发生时，需修改请求的内容后再次发送请求
+
+#### 401 Unauthorized
+
+[![b9L6T1.png](https://s4.ax1x.com/2022/02/23/b9L6T1.png)](https://imgtu.com/i/b9L6T1)
+
+该状态码表示发送的请求需要有通过 HTTP 认证（BASIC 认证、DIGEST 认证）的认证信息。另外若之前已进行过 1 次请求，则表示用 户认证失败。
+
+#### 403 Forbidden
+
+[![b9Op0s.png](https://s4.ax1x.com/2022/02/23/b9Op0s.png)](https://imgtu.com/i/b9Op0s)
+
+
+
+未获得文件系统的访问授权，访问权限出现某些问题（从未授权的发送源 IP 地址试图访问）等列举的情况都可能是发生 403 的原因。
+
+#### 404 Not Found
+
+[![b9OMA1.png](https://s4.ax1x.com/2022/02/23/b9OMA1.png)](https://imgtu.com/i/b9OMA1)
+
+该状态码表明服务器上无法找到请求的资源
+
+
+
+### 5XX 服务器错误
+
+5XX 的响应结果表明服务器本身发生错误。
+
+#### 500 Internal Server Error
+
+[![b9OD9f.png](https://s4.ax1x.com/2022/02/23/b9OD9f.png)](https://imgtu.com/i/b9OD9f)
+
+该状态码表明服务器端在执行请求时发生了错误。也有可能是 Web应用存在的 bug 或某些临时的故障
+
+#### 503 Service Unavailable
+
+[![b9OogU.png](https://s4.ax1x.com/2022/02/23/b9OogU.png)](https://imgtu.com/i/b9OogU)
+
+该状态码表明服务器暂时处于超负载或正在进行停机维护，现在无法处理请求
+
+
+
+### 总结
+
+| 状态码                    | 描述                           |
+| ------------------------- | ------------------------------ |
+| 200 OK                    | 正常处理                       |
+| 204 No Content            | 正常处理，返回报文不含实体主题 |
+| 206 Partial Content       | 正常处理，返回部分实体         |
+| 301 Moved Permanently     | 永久移动                       |
+| 302 Found                 | 暂时移动                       |
+| 303 See Other             | 暂时移动，应使用GET            |
+| 304 Not Modified          | 客户端附带条件，条件不满足     |
+| 307 Temporary             | 同302                          |
+| 400 Bad Request           | 请求报文有问题                 |
+| 401 Unauthorized          | 未认证                         |
+| 403 Forbidden             | 被拒绝，可能因为源IP等         |
+| 404 Not Found             | 资源没找到                     |
+| 500 Internal Server Error | 服务端内部错误                 |
+| 503 Service Unavailable   | 服务访问量大，暂时不可用       |
+
+
+
+## 第五章：与 HTTP 协作的 Web 服务器
+
+一台 Web 服务器可搭建多个独立域名的 Web 网站，也可作为通信路径上的中转服务器提升传输效率。
+
+### 用单台虚拟主机实现多个域名
+
+HTTP/1.1 规范允许一台 HTTP 服务器搭建多个 Web 站点。比如，提供 Web 托管服务（Web Hosting Service）的供应商，可以用一台服务器为多位客户服务，也可以以每位客户持有的域名运行各自不同的网站。这是因为利用了虚拟主机（Virtual Host，又称虚拟服务器）的功能。即使物理层面只有一台服务器，但只要使用虚拟主机的功能，则可以假想已具有多台服务器。
+
+[![b9xe8x.png](https://s4.ax1x.com/2022/02/23/b9xe8x.png)](https://imgtu.com/i/b9xe8x)
+
+[![b9xaM8.png](https://s4.ax1x.com/2022/02/23/b9xaM8.png)](https://imgtu.com/i/b9xaM8)
+
+在相同的 IP 地址下，由于虚拟主机可以寄存多个不同主机名和域名的 Web 网站，因此在发送 HTTP 请求时，必须在 Host 首部内完整指定主机名或域名的 URI。
+
+### 通信数据转发程序 ：代理、网关、隧道
+
+HTTP 通信时，除客户端和服务器以外，还有一些用于通信数据转发的应用程序，例如代理、网关和隧道。它们可以配合服务器工作。
+
+#### 代理
+
+代理是一种有转发功能的应用程序，它扮演了位于服务器和客户端“中间人”的角色，接收由客户端发送的请求并转发给服务器，同时也接收服务器返回的响应并转发给客户端。
+
+代理服务器的基本行为就是接收客户端发送的请求后转发给其他服务器。代理不改变请求 URI，会直接发送给前方持有资源的目标服务
+器。持有资源实体的服务器被称为源服务器。从源服务器返回的响应经过代理服务器后再传给客户端
+
+[![b9zeoj.png](https://s4.ax1x.com/2022/02/23/b9zeoj.png)](https://imgtu.com/i/b9zeoj)
+
+
+
+使用代理服务器的理由有：利用缓存技术（稍后讲解）减少网络带宽的流量，组织内部针对特定网站的访问控制，以获取访问日志为主要
+目的，等等。代理有多种使用方法，按两种基准分类。一种是是否使用缓存，另一种是是否会修改报文。
+==缓存代理==
+代理转发响应时，缓存代理（Caching Proxy）会预先将资源的副本（缓存）保存在代理服务器上。当代理再次接收到对相同资源的请求时，就可以不从源服务器那里获取资源，而是将之前缓存的资源作为响应返回。
+==透明代理==
+转发请求或响应时，不对报文做任何加工的代理类型被称为透明代理（Transparent Proxy）。反之，对报文内容进行加工的代理被称为非透明代理。
+
+
+
+#### 网关
+
+网关是转发其他服务器通信数据的服务器，接收从客户端发送来的请求时，它就像自己拥有资源的源服务器一样对请求进行处理。有时客户端可能都不会察觉，自己的通信目标是一个网关。
+
+[![b9zxXT.png](https://s4.ax1x.com/2022/02/23/b9zxXT.png)](https://imgtu.com/i/b9zxXT)
+
+网关的工作机制和代理十分相似。而网关能使通信线路上的服务器提供非 HTTP 协议服务。利用网关能提高通信的安全性，因为可以在客户端与网关之间的通信线路上加密以确保连接的安全。比如，网关可以连接数据库，使用SQL语句查询数据。另外，在 Web 购物网站上进行信用卡结算时，网关可以和信用卡结算系统联动。
+
+#### 隧道
+
+隧道是在相隔甚远的客户端和服务器两者之间进行中转，并保持双方通信连接的应用程序。
+
+隧道可按要求建立起一条与其他服务器的通信线路，届时使用 SSL等加密手段进行通信。隧道的目的是确保客户端能与服务器进行安全的通信。隧道本身不会去解析 HTTP 请求。也就是说，请求保持原样中转给之后的服务器。隧道会在通信双方断开连接时结束。
+
+[![bCSuHe.png](https://s4.ax1x.com/2022/02/23/bCSuHe.png)](https://imgtu.com/i/bCSuHe)
+
+
+
+
+
+### 保存资源的缓存
+
+缓存是指代理服务器或客户端本地磁盘内保存的资源副本。利用缓存可减少对源服务器的访问，因此也就节省了通信流量和通信时间。
+缓存服务器是代理服务器的一种，并归类在缓存代理类型中。换句话说，当代理转发从服务器返回的响应时，代理服务器将会保存一份资
+源的副本
+
+[![bCSUHg.png](https://s4.ax1x.com/2022/02/23/bCSUHg.png)](https://imgtu.com/i/bCSUHg)
+
+[![bCScuT.png](https://s4.ax1x.com/2022/02/23/bCScuT.png)](https://imgtu.com/i/bCScuT)
+
+缓存服务器的优势在于利用缓存可避免多次从源服务器转发资源。因此客户端可就近从缓存服务器上获取资源，而源服务器也不必多次处理相同的请求了。
+
+#### 缓存的有效期限
+
+[![bCSI81.png](https://s4.ax1x.com/2022/02/23/bCSI81.png)](https://imgtu.com/i/bCSI81)
+
+#### 客户端的缓存
+
+缓存不仅可以存在于缓存服务器内，还可以存在客户端浏览器中。以Internet Explorer 程序为例，把客户端缓存称为临时网络文件
+（Temporary Internet File）。
+浏览器缓存如果有效，就不必再向服务器请求相同的资源了，可以直接从本地磁盘内读取。另外，和缓存服务器相同的一点是，当判定缓存过期后，会向源服务器确认资源的有效性。若判断浏览器缓存失效，浏览器会再次请求新资源
+
+[![bCSXUH.png](https://s4.ax1x.com/2022/02/23/bCSXUH.png)](https://imgtu.com/i/bCSXUH)
+
+
+
+
+
+## 第六章：HTTP 首部
+
+HTTP 协议的请求和响应报文中必定包含 HTTP 首部，只是我们平时在使用 Web 的过程中感受不到它
+
+### HTTP 报文首部
+
+[![bCC83R.png](https://s4.ax1x.com/2022/02/23/bCC83R.png)](https://imgtu.com/i/bCC83R)
+
+HTTP 协议的请求和响应报文中必定包含 HTTP 首部。首部内容为客户端和服务器分别处理请求和响应提供所需要的信息。对于客户端用
+户来说，这些信息中的大部分内容都无须亲自查看。报文首部由几个字段构成。
+
+[![bCCI8s.png](https://s4.ax1x.com/2022/02/23/bCCI8s.png)](https://imgtu.com/i/bCCI8s)
+
+在报文众多的字段当中，HTTP 首部字段包含的信息最为丰富。首部字段同时存在于请求和响应报文内，并涵盖 HTTP 报文相关的内容信
+息。因 HTTP 版本或扩展规范的变化，首部字段可支持的字段内容略有不同。本书主要涉及 HTTP/1.1 及常用的首部字段
+
+
+
+### HTTP 首部字段
+
+#### HTTP 首部字段传递重要信息
+
+HTTP 首部字段是构成 HTTP 报文的要素之一。在客户端与服务器之间以 HTTP 协议进行通信的过程中，无论是请求还是响应都会使用首
+部字段，它能起到传递额外重要信息的作用。使用首部字段是为了给浏览器和服务器提供报文主体大小、所使用的语言、认证信息等内容
+
+![](https://s3.bmp.ovh/imgs/2022/02/76a3af88fe8a936a.png)
+
+
+
+#### HTTP 首部字段结构
+
+![](https://s3.bmp.ovh/imgs/2022/02/5731bea92b109bef.png)
+
+
+
+>若 HTTP 首部字段重复了会如何
+>
+>当 HTTP 报文首部中出现了两个或两个以上具有相同首部字段名时会怎么样？这种情况在规范内尚未明确，根据浏览器内部处理逻辑的不同，结果可能并不一致。有些浏览器会优先处理第一次出现的首部字段，而有些则会优先处理最后出现的首部字段
+
+#### 4 种 HTTP 首部字段类型
+
+![](https://s3.bmp.ovh/imgs/2022/02/c92d0b4d655c1f75.png)
+
+
+
+#### HTTP/1.1 首部字段一览
+
+==通用首部字段==
+
+![](https://s3.bmp.ovh/imgs/2022/02/527912ee9e44f82b.png)
+
+==请求首部字段==
+
+![](https://s3.bmp.ovh/imgs/2022/02/d5647667086a1979.png)
+
+==响应首部字段==
+
+[![bC4U9H.png](https://s4.ax1x.com/2022/02/23/bC4U9H.png)](https://imgtu.com/i/bC4U9H)
+
+
+
+==实体首部字段==
+
+[![bC4But.png](https://s4.ax1x.com/2022/02/23/bC4But.png)](https://imgtu.com/i/bC4But)
+
+
+
+#### 非 HTTP/1.1 首部字段
+
+在 HTTP 协议通信交互中使用到的首部字段，不限于 RFC2616 中定义的 47 种首部字段。还有 Cookie、Set-Cookie 和 Content-Disposition等在其他 RFC 中定义的首部字段，它们的使用频率也很高
+
+
+
+#### End-to-end 首部和 Hop-by-hop 首部
+
+### HTTP/1.1 通用首部字段
+
+通用首部字段是指，请求报文和响应报文双方都会使用的首部。
+
+#### Cache-Control
+
+通过指定首部字段 Cache-Control 的指令，就能操作缓存的工作机制
+
+[![bC57Lt.png](https://s4.ax1x.com/2022/02/23/bC57Lt.png)](https://imgtu.com/i/bC57Lt)
+
+#### Connection
+
+Connection 首部字段具备如下两个作用。
+
+1.  控制不再转发给代理的首部字段
+2.  管理持久连接
+
+#### Date
+
+[![bCIztO.png](https://s4.ax1x.com/2022/02/23/bCIztO.png)](https://imgtu.com/i/bCIztO)
+
+>   Date: Tue, 03 Jul 2012 04:40:59 GMT
+
+#### Pragma
+
+[![bCoMcj.png](https://s4.ax1x.com/2022/02/23/bCoMcj.png)](https://imgtu.com/i/bCoMcj)
+
+#### Trailer
+
+[![bCo5DI.png](https://s4.ax1x.com/2022/02/23/bCo5DI.png)](https://imgtu.com/i/bCo5DI)
+
+
+
+#### Transfer-Encoding
+
+[![bCoxrn.png](https://s4.ax1x.com/2022/02/23/bCoxrn.png)](https://imgtu.com/i/bCoxrn)
+
+首部字段 Transfer-Encoding 规定了传输报文主体时采用的编码方式。
+
+
+
+#### Upgrade
+
+首部字段 Upgrade 用于检测 HTTP 协议及其他协议是否可使用更高的版本进行通信，其参数值可以用来指定一个完全不同的通信协议
+
+[![bCTNZt.png](https://s4.ax1x.com/2022/02/23/bCTNZt.png)](https://imgtu.com/i/bCTNZt)
+
+
+
+####  Via
+
+使用首部字段 Via 是为了追踪客户端与服务器之间的请求和响应报文的传输路径。报文经过代理或网关时，会先在首部字段 Via 中附加该服务器的信息，然后再进行转发。这个做法和 traceroute 及电子邮件的 Received首部的工作机制很类
+
+[![bCT4WF.png](https://s4.ax1x.com/2022/02/23/bCT4WF.png)](https://imgtu.com/i/bCT4WF)
+
+
+
+#### Warning
+
+HTTP/1.1 的 Warning 首部是从 HTTP/1.0 的响应首部（Retry-After）演变过来的。该首部通常会告知用户一些与缓存相关的问题的警告。
+
+
+
+### 请求首部字段
+
+请求首部字段是从客户端往服务器端发送请求报文中所使用的字段，用于补充请求的附加信息、客户端信息、对响应内容相关的优先级等
+内容
+
+[![bCTLo6.png](https://s4.ax1x.com/2022/02/23/bCTLo6.png)](https://imgtu.com/i/bCTLo6)
+
+
+
+#### Accept
+
+[![bC7pyd.png](https://s4.ax1x.com/2022/02/23/bC7pyd.png)](https://imgtu.com/i/bC7pyd)
+
+Accept 首部字段可通知服务器，用户代理能够处理的媒体类型及媒体类型的相对优先级。可使用 type/subtype 这种形式，一次指定多种媒体类型
+
+
+
+#### Accept-Charset
+
+[![bC7xA0.png](https://s4.ax1x.com/2022/02/23/bC7xA0.png)](https://imgtu.com/i/bC7xA0)
+
+Accept-Charset 首部字段可用来通知服务器用户代理支持的字符集及字符集的相对优先顺序。另外，可一次性指定多种字符集。与首部字
+段 Accept 相同的是可用权重 q 值来表示相对优先级。
+
+#### Accept-Encoding
+
+[![bC78YT.png](https://s4.ax1x.com/2022/02/23/bC78YT.png)](https://imgtu.com/i/bC78YT)
+
+#### Accept-Language
+
+[![bC7w01.png](https://s4.ax1x.com/2022/02/23/bC7w01.png)](https://imgtu.com/i/bC7w01)
+
+首部字段 Accept-Language 用来告知服务器用户代理能够处理的自然语言集（指中文或英文等），以及自然语言集的相对优先级。可一次指定多种自然语言集。
+
+#### Authorization
+
+[![bCHu9O.png](https://s4.ax1x.com/2022/02/23/bCHu9O.png)](https://imgtu.com/i/bCHu9O)
+
+首部字段 Authorization 是用来告知服务器，用户代理的认证信息（证书值）。通常，想要通过服务器认证的用户代理会在接收到返回的
+401 状态码响应后，把首部字段 Authorization 加入请求中。共用缓存在接收到含有 Authorization 首部字段的请求时的操作处理会略有差异
+
+
+
+#### Expect
+
+[![bCHwvQ.png](https://s4.ax1x.com/2022/02/23/bCHwvQ.png)](https://imgtu.com/i/bCHwvQ)
+
+
+
+#### From
+
+[![bCHR8U.png](https://s4.ax1x.com/2022/02/23/bCHR8U.png)](https://imgtu.com/i/bCHR8U)
+
+首部字段 From 用来告知服务器使用用户代理的用户的电子邮件地址
+
+#### Host
+
+[![bCHO2D.png](https://s4.ax1x.com/2022/02/23/bCHO2D.png)](https://imgtu.com/i/bCHO2D)
+
+首部字段 Host 会告知服务器，请求的资源所处的互联网主机名和端口号。Host 首部字段在 HTTP/1.1 规范内是唯一一个必须被包含在请
+求内的首部字段
+
+#### If-Match
+
+[![bCbZrj.png](https://s4.ax1x.com/2022/02/23/bCbZrj.png)](https://imgtu.com/i/bCbZrj)
+
+形如 If-xxx 这种样式的请求首部字段，都可称为条件请求。服务器接收到附带条件的请求后，只有判断指定条件为真时，才会执行请求。
+
+#### If-Modified-Since
+
+[![bCbUd1.png](https://s4.ax1x.com/2022/02/23/bCbUd1.png)](https://imgtu.com/i/bCbUd1)
+
+#### If-None-Match
+
+![2022-02-23-20-07-23.png](https://s2.loli.net/2022/02/23/lpAPnVjK3xawmHu.png)
+
+
+
+#### If-Range
+
+![](https://pic.imgdb.cn/item/621624382ab3f51d91f90fe0.png)
+
+
+
+#### If-Unmodified-Since
+
+#### Max-Forwards
+
+#### Proxy-Authorization
+
+#### Range
+
+#### Referer
+
+#### TE
+
+#### User-Agent
+
+User-Agent 用于传达浏览器的种类
+
+>   Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.102 Safari/537.36
+
+
+
+### 响应首部字段
+
+响应首部字段是由服务器端向客户端返回响应报文中所使用的字段，用于补充响应的附加信息、服务器信息，以及对客户端的附加要求等信息
+
+![](https://pic.imgdb.cn/item/621625432ab3f51d91fbb428.png)
+
+
+
+#### Accept-Ranges
+
+![](https://pic.imgdb.cn/item/62162b582ab3f51d910b56aa.png)
+
+首部字段 Accept-Ranges 是用来告知客户端服务器是否能处理范围请求，以指定获取服务器端某个部分的资源
+
+
+
+#### Age
+
+![](https://pic.imgdb.cn/item/62162ba02ab3f51d910c1ddf.png)
+
+首部字段 Age 能告知客户端，源服务器在多久前创建了响应。字段的单位为秒。
+
+
+
+#### ETag
+
+![](https://pic.imgdb.cn/item/62162be32ab3f51d910ccc5e.png)
+
+首部字段 ETag 能告知客户端实体标识。它是一种可将资源以字符串形式做唯一性标识的方式。服务器会为每份资源分配对应的 ETag值
+
+
+
+#### Location
+
+![](https://pic.imgdb.cn/item/62162c2f2ab3f51d910d8f34.png)
+
+使用首部字段 Location 可以将响应接收方引导至某个与请求 URI 位置不同的资源
+
+#### Proxy-Authenticate
+
+#### Retry-After
+
+#### Server
+
+#### Vary
+
+#### WWW-Authenticate
+
+
+
+### 实体首部字段
+
+实体首部字段是包含在请求报文和响应报文中的实体部分所使用的首部，用于补充内容的更新时间等与实体相关的信息。
+
+在请求和响应两方的 HTTP 报文中都含有与实体相关的首部字段
+
+#### Allow
+
+![](https://pic.imgdb.cn/item/62162eb02ab3f51d9113eed0.png)
+
+首部字段 Allow 用于通知客户端能够支持 Request-URI 指定资源的所有 HTTP 方法。
+
+#### Content-Encoding
+
+![](https://pic.imgdb.cn/item/62162eff2ab3f51d9114b10c.png)
+
+
+
+#### Content-Language
+
+![](https://pic.imgdb.cn/item/62162f2c2ab3f51d91152901.png)
+
+
+
+#### Content-Length
+
+![](https://pic.imgdb.cn/item/62162f562ab3f51d91159752.png)
+
+
+
+#### Content-Location
+
+![](https://pic.imgdb.cn/item/62162fd22ab3f51d9116dad9.png)
+
+
+
+#### Content-MD5
+
+![](https://pic.imgdb.cn/item/62162fff2ab3f51d91177411.png)
+
+
+
+#### Content-Range
+
+#### Content-Type
+
+>Content-Type: text/html; charset=UTF-8
+
+#### Expires
+
+![](https://pic.imgdb.cn/item/621630542ab3f51d91184831.png)
+
+#### Last-Modified
+
+![](https://pic.imgdb.cn/item/621630782ab3f51d9118a5d4.png)
+
+
+
+
+
+### 为 Cookie 服务的首部字段
+
+管理服务器与客户端之间状态的 Cookie，虽然没有被编入标准化HTTP/1.1 的 RFC2616 中，但在 Web 网站方面得到了广泛的应用。Cookie 的工作机制是用户识别及状态管理。Web 网站为了管理用户状态会通过 Web 浏览器，把一些数据临时写入用户的计算机内。接着当用户访问该Web网站时，可通过通信方式取回之前发放的Cookie。
+
+![](https://pic.imgdb.cn/item/621630e32ab3f51d9119b55c.png)
+
+
+
+
+
+## 第七章：确保 Web 安全的HTTPS
+
+在 HTTP 协议中有可能存在信息窃听或身份伪装等安全问题。使用HTTPS 通信机制可以有效地防止这些问题。本章我们就了解一下
+HTTPS。
+
+### HTTP 的缺点
+
+1.  HTTP 主要有这些不足，例举如下。通信使用明文（不加密），内容可能会被窃听
+2.  不验证通信方的身份，因此有可能遭遇伪装
+3.  无法证明报文的完整性，所以有可能已遭篡改
+
+#### 通信使用明文可能会被窃听
+
+由于 HTTP 本身不具备加密的功能，所以也无法做到对通信整体（使用 HTTP 协议通信的请求和响应的内容）进行加密。即，HTTP 报文
+使用明文（指未经过加密的报文）方式发送
+
+![](https://pic.imgdb.cn/item/621632752ab3f51d911dbbdc.png)
+
+![](https://pic.imgdb.cn/item/621632902ab3f51d911dfce0.png)
+
+
+
+##### 加密处理防止被窃听
+
+在目前大家正在研究的如何防止窃听保护信息的几种对策中，最为普及的就是加密技术。加密的对象可以有这么几个
+
+==通信的加密==
+
+一种方式就是将通信加密。HTTP 协议中没有加密机制，但可以通过和 SSL（Secure Socket Layer，安全套接层）或TLS（Transport Layer Security，安全层传输协议）的组合使用，加密 HTTP 的通信内容。
+用 SSL建立安全通信线路之后，就可以在这条线路上进行 HTTP通信了。与 SSL组合使用的 HTTP 被称为 HTTPS（HTTP Secure，超文本传输安全协议）或 HTTP over SSL。
+
+![](https://pic.imgdb.cn/item/621636cf2ab3f51d9128dab8.png)
+
+==内容的加密==
+
+还有一种将参与通信的内容本身加密的方式。由于 HTTP 协议中没有加密机制，那么就对 HTTP 协议传输的内容本身加密。即把
+HTTP 报文里所含的内容进行加密处理。
+在这种情况下，客户端需要对 HTTP 报文进行加密处理后再发送请求。
+
+![](https://pic.imgdb.cn/item/621637662ab3f51d912a7152.png)
+
+诚然，为了做到有效的内容加密，前提是要求客户端和服务器同时具备加密和解密机制。主要应用在 Web 服务中。有一点必须
+引起注意，由于该方式不同于 SSL或 TLS 将整个通信线路加密处理，所以内容仍有被篡改的风险。
+
+#### 不验证通信方的身份就可能遭遇伪装
+
+HTTP 协议中的请求和响应不会对通信方进行确认。也就是说存在“服务器是否就是发送请求中 URI 真正指定的主机，返回的响应是否真的返回到实际提出请求的客户端”等类似问题。
+
+##### 任何人都可发起请求
+
+在 HTTP 协议通信时，由于不存在确认通信方的处理步骤，任何人都可以发起请求。另外，服务器只要接收到请求，不管对方是
+谁都会返回一个响应（但也仅限于发送端的 IP 地址和端口号没有被 Web 服务器设定限制访问的前提下）。
+
+![](https://pic.imgdb.cn/item/62163b0c2ab3f51d9134a201.png)
+
+1.  HTTP 协议的实现本身非常简单，不论是谁发送过来的请求都会返回响应，因此不确认通信方，会存在以下各种隐患
+2.  无法确定请求发送至目标的 Web 服务器是否是按真实意图返回响应的那台服务器。有可能是已伪装的 Web 服务器。
+3.  无法确定响应返回到的客户端是否是按真实意图接收响应的那个客户端。有可能是已伪装的客户端。
+4.  无法确定正在通信的对方是否具备访问权限。因为某些Web 服务器上保存着重要的信息，只想发给特定用户通信的权限。
+5.  无法判定请求是来自何方、出自谁手。即使是无意义的请求也会照单全收。
+6.  无法阻止海量请求下的 DoS 攻击（Denial of Service，拒绝服务攻击）。
+
+##### 查明对手的证书
+
+虽然使用 HTTP 协议无法确定通信方，但如果使用 SSL则可以。SSL不仅提供加密处理，而且还使用了一种被称为证书的手段，可用于确定对方
 
