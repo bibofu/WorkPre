@@ -263,3 +263,142 @@ PUT 方法用来传输文件。就像 FTP 协议的文件上传一样，要求�
 但是，鉴于 HTTP/1.1 的 PUT 方法自身不带验证机制，任何人都可以上传文件 , 存在安全性问题，因此一般的 Web 网站不使用该方法。若配合 Web 应用程序的验证机制，或架构设计采用REST（REpresentational State Transfer，表征状态转移）标准的同类Web 网站，就可能会开放使用 PUT 方法
 
 [![bpkOSA.png](https://s4.ax1x.com/2022/02/22/bpkOSA.png)](https://imgtu.com/i/bpkOSA)
+
+
+
+==HEAD：获得报文首部==
+
+HEAD 方法和 GET 方法一样，只是不返回报文主体部分。用于确认URI 的有效性及资源更新的日期时间等
+
+![](https://s3.bmp.ovh/imgs/2022/02/cc11079701719355.png)
+
+![](https://s3.bmp.ovh/imgs/2022/02/5b8cfe884769b294.png)
+
+
+
+==DELETE：删除文件==
+
+DELETE 方法用来删除文件，是与 PUT 相反的方法。DELETE 方法按请求 URI 删除指定的资源。
+但是，HTTP/1.1 的 DELETE 方法本身和 PUT 方法一样不带验证机制，所以一般的 Web 网站也不使用 DELETE 方法。当配合 Web 应用
+程序的验证机制，或遵守 REST 标准时还是有可能会开放使用的。
+
+![](https://s3.bmp.ovh/imgs/2022/02/58f2723b1972a0e7.png)
+
+
+
+==OPTIONS：询问支持的方法==
+
+OPTIONS 方法用来查询针对请求 URI 指定的资源支持的方法。
+
+![](https://s3.bmp.ovh/imgs/2022/02/a0f07b63f5a36380.png)
+
+
+
+==TRACE：追踪路径==
+
+TRACE 方法是让 Web 服务器端将之前的请求通信环回给客户端的方法
+
+客户端通过 TRACE 方法可以查询发送出去的请求是怎样被加工修改/ 篡改的。这是因为，请求想要连接到源目标服务器可能会通过代理中转，TRACE 方法就是用来确认连接过程中发生的一系列操作
+
+![](https://s3.bmp.ovh/imgs/2022/02/7d8dd8c38cb04137.png)
+
+
+
+==CONNECT：要求用隧道协议连接代理==
+
+[![b9ZgdP.png](https://s4.ax1x.com/2022/02/23/b9ZgdP.png)](https://imgtu.com/i/b9ZgdP)
+
+
+
+### 使用方法下达命令
+
+向请求 URI 指定的资源发送请求报文时，采用称为方法的命令。方法的作用在于，可以指定请求的资源按期望产生某种行为。方法中有 GET、POST 和 HEAD 等。
+
+[![b9Zbd0.png](https://s4.ax1x.com/2022/02/23/b9Zbd0.png)](https://imgtu.com/i/b9Zbd0)
+
+
+
+[![b9ZOiT.png](https://s4.ax1x.com/2022/02/23/b9ZOiT.png)](https://imgtu.com/i/b9ZOiT)
+
+
+
+### 持久连接节省通信量
+
+HTTP 协议的初始版本中，每进行一次 HTTP 通信就要断开一次 TCP连接。
+
+[![b9eZSe.png](https://s4.ax1x.com/2022/02/23/b9eZSe.png)](https://imgtu.com/i/b9eZSe)
+
+[![b9eMwt.png](https://s4.ax1x.com/2022/02/23/b9eMwt.png)](https://imgtu.com/i/b9eMwt)
+
+#### 持久连接
+
+为解决上述 TCP 连接的问题，HTTP/1.1 和一部分的 HTTP/1.0 想出了持久连接（HTTP Persistent Connections，也称为 HTTP keep-alive 或HTTP connection reuse）的方法。持久连接的特点是，只要任意一端没有明确提出断开连接，则保持 TCP 连接状态
+
+[![b9eamn.png](https://s4.ax1x.com/2022/02/23/b9eamn.png)](https://imgtu.com/i/b9eamn)
+
+持久连接的好处在于减少了 TCP 连接的重复建立和断开所造成的额外开销，减轻了服务器端的负载。另外，减少开销的那部分时间，使HTTP 请求和响应能够更早地结束，这样 Web 页面的显示速度也就相应提高了。在 HTTP/1.1 中，所有的连接默认都是持久连接，但在 HTTP/1.0 内并未标准化。虽然有一部分服务器通过非标准的手段实现了持久连接，但服务器端不一定能够支持持久连接。毫无疑问，除了服务器端，客户端也需要支持持久连接。
+
+
+
+#### 管线化
+
+持久连接使得多数请求以管线化（pipelining）方式发送成为可能。从前发送请求后需等待并收到响应，才能发送下一个请求。管线化技术出现后，不用等待响应亦可直接发送下一个请求。这样就能够做到同时并行发送多个请求，而不需要一个接一个地等待响应了。
+
+[![b9e5tK.png](https://s4.ax1x.com/2022/02/23/b9e5tK.png)](https://imgtu.com/i/b9e5tK)
+
+
+
+### 使用 Cookie 的状态管理
+
+[![b9mPXj.png](https://s4.ax1x.com/2022/02/23/b9mPXj.png)](https://imgtu.com/i/b9mPXj)
+
+保留无状态协议这个特征的同时又要解决类似的矛盾问题，于是引入了 Cookie 技术。Cookie 技术通过在请求和响应报文中写入 Cookie 信息来控制客户端的状态
+
+Cookie 会根据从服务器端发送的响应报文内的一个叫做 Set-Cookie 的首部字段信息，通知客户端保存 Cookie。当下次客户端再往该服务器发送请求时，客户端会自动在请求报文中加入 Cookie 值后发送出去。服务器端发现客户端发送过来的 Cookie 后，会去检查究竟是从哪一个客户端发来的连接请求，然后对比服务器上的记录，最后得到之前的状态信息
+
+[![b9nmVI.png](https://s4.ax1x.com/2022/02/23/b9nmVI.png)](https://imgtu.com/i/b9nmVI)
+
+[![b9nMPf.png](https://s4.ax1x.com/2022/02/23/b9nMPf.png)](https://imgtu.com/i/b9nMPf)
+
+
+
+HTTP 请求报文和响应报文的内容如下：
+
+[![b9ngd1.png](https://s4.ax1x.com/2022/02/23/b9ngd1.png)](https://imgtu.com/i/b9ngd1)
+
+
+
+## 第三章：HTTP 报文内的 HTTP信息
+
+### HTTP 报文
+
+用于 HTTP 协议交互的信息被称为 HTTP 报文。请求端（客户端）的HTTP 报文叫做请求报文，响应端（服务器端）的叫做响应报文。
+HTTP 报文本身是由多行（用 CR+LF 作换行符）数据构成的字符串文本。
+HTTP 报文大致可分为报文首部和报文主体两块。两者由最初出现的空行（CR+LF）来划分。通常，并不一定要有报文主体
+
+[![b9uzh6.png](https://s4.ax1x.com/2022/02/23/b9uzh6.png)](https://imgtu.com/i/b9uzh6)
+
+
+
+#### 请求报文及响应报文的结构
+
+[![b9Ku38.png](https://s4.ax1x.com/2022/02/23/b9Ku38.png)](https://imgtu.com/i/b9Ku38)
+
+
+
+[![b9KJNq.png](https://s4.ax1x.com/2022/02/23/b9KJNq.png)](https://imgtu.com/i/b9KJNq)
+
+
+
+请求报文和响应报文的首部内容由以下数据组成。现在出现的各种首部字段及状态码稍后会进行阐述。
+==请求行==
+包含用于请求的方法，请求 URI 和 HTTP 版本。
+==状态行==
+包含表明响应结果的状态码，原因短语和 HTTP 版本。
+==首部字段==
+包含表示请求和响应的各种条件和属性的各类首部。一般有 4 种首部，分别是：通用首部、请求首部、响应首部和实体首部。
+==其他==
+可能包含 HTTP 的 RFC 里未定义的首部（Cookie 等）
+
+### 编码提升传输速率
+
