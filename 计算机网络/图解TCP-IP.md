@@ -344,3 +344,28 @@ IP 模块收到 IP 包首部及后面的数据部分以后，也做类似的处�
 
 本章主要介绍计算机网络最基本的内容一一数据链路层。如果没有数据链路层，基千TCP/IP 的通信也就无从谈起。因此，本章将
 着重介绍TCP/IP 的具体数据链路，如以太网、无线局域网、 PPP 等
+
+### 数据链路的作用
+
+本章旨在介绍 OSI 参考模型中数据链路层的相关技术，包括 MAC 寻址（物理寻址）、介质共享、非公有网络、分组交换、环路检测、 VLAN (Virtual Local Area Network, 虚拟局域网）等。本章也会涉及作为传输方式的数据链路，如以太网、WLAN (Wireless Local Area Network, 无限局域网）、 PPP (Point to Point Protocol, 点对点协议）等概念。数据链路也可以被视为网络传输中的最小单位。其实，仔
+细观察连通全世界的互联网就可以发现，它也不外乎是由众多这样的数据链路组成的，因此又可以称互联网为“数据链路的集合”。
+
+![](https://pic.imgdb.cn/item/621dccfd2ab3f51d912f0d60.png)
+
+
+
+![](https://pic.imgdb.cn/item/621dcd7a2ab3f51d91300679.png)
+
+### 数据链路相关技术
+
+#### MAC 地址
+
+![](https://pic.imgdb.cn/item/621dce1a2ab3f51d9131321a.png)
+
+
+
+![](https://pic.imgdb.cn/item/621dd8672ab3f51d9145324c.png)
+
+
+
+![](https://pic.imgdb.cn/item/621dd93a2ab3f51d9146bfcf.png)
